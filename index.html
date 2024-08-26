@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Telegram Mini App with TON Payment</title>
+    <!-- Include the Telegram Web App JavaScript API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Include TonWeb for TON blockchain interactions -->
+    <script src="https://cdn.jsdelivr.net/npm/tonweb@0.0.48/dist/tonweb.min.js"></script>
+    <!-- Include TON Connect UI Library for wallet connection -->
+    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <!-- Include TON Connect UI Library CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tonconnect/ui@latest/dist/tonconnect-ui.min.css"
+    />
+  </head>
+  <body>
+    <h1>Pay with TON in Telegram Mini App</h1>
+    <div id="tonConnectButtonContainer"></div>
+    <!-- Container for TON Connect Button -->
+    <button id="payWithTonButton" style="display: none">Pay with TON</button>
+    <!-- Payment Button -->
+    <div id="paymentStatus"></div>
+    <!-- Status Display -->
+
+    <script>
+      const tg = window.Telegram.WebApp; // Initialize the Telegram Web App
+      const TonWeb = window.TonWeb; // Access TonWeb from the global window object
+
+      // Initialize TON Connect UI
+      const tonConnect = new TonConnectUI({
+        manifestUrl: "https://yourdomain.com/tonconnect-manifest.json", // URL to your TON Connect manifest file
+      });
+
+      tonConnect.renderButton({
+        container: "#tonConnectButtonContainer", // The container where the TON Connect button will be rendered
+        onClick: async () => {
+          await tonConnect.connect();
+        },
+        onConnected: () => {
+          // Once the wallet is connected, show the payment button
+          document.getElementById("payWithTonButton").style.display = "block";
+          document.getElementById("tonConnectButtonContainer").style.display =
+            "none";
+        },
+      });
+
+      // Set up the "Pay with TON" button click event
+      document
+        .getElementById("payWithTonButton")
+        .addEventListener("click", () => {
+          tg.MainButton.text = "Processing TON Payment...";
+          tg.MainButton.show();
+          requestTonPayment();
+        });
+
+      async function requestTonPayment() {
+        const tonweb = new TonWeb(); // Initialize TonWeb
+
+        try {
+          // Retrieve the wallet provider from TON Connect UI
+          const provider = tonConnect.getProvider();
+          const walletInfo = provider.walletInfo; // Get connected wallet info
+
+          const destinationAddress = "EQD3..."; // Replace with the destination address
+          const tonAmount = 0.1; // Example amount in TON
+          const amountInNanoTon = TonWeb.utils.toNano(tonAmount); // Convert TON to nanoTON
+
+          // Create wallet contract instance
+          const walletContract = new tonweb.wallet.all.v3R2(provider, {
+            publicKey: walletInfo.publicKey,
+          }); // Use public key from wallet info
+
+          // Retrieve the current sequence number for the wallet
+          const seqno = await walletContract.methods.seqno().call();
+
+          // Create a transaction to send TON
+          const transfer = walletContract.methods.transfer({
+            secretKey: walletInfo.secretKey, // Replace with the actual secret key
+            toAddress: destinationAddress,
+            amount: amountInNanoTon,
+            seqno: seqno,
+            sendMode: 3,
+          });
+
+          // Send the transaction
+          await transfer.send();
+
+          tg.MainButton.text = "Payment Successful!";
+          tg.MainButton.show();
+        } catch (error) {
+          console.error("Error processing TON payment:", error);
+          tg.MainButton.text = "Payment Error!";
+          tg.MainButton.show();
+        }
+      }
+    </script>
+  </body>
+</html>
