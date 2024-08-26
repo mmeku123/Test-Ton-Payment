@@ -1,8 +1,8 @@
 {
   "name": "Your DApp Name",
-  "url": "https://yourdomain.com",
-  "iconUrl": "https://yourdomain.com/icon.png",
+  "url": "https://mmeku123.github.io/Test-Ton-Payment/",
+  "iconUrl": "https://mmeku123.github.io/Test-Ton-Payment/icon.png",
   "bridgeUrl": "https://bridge.tonapi.io/bridge",
-  "callbackUrl": "https://yourdomain.com/callback",
+  "callbackUrl": "https://mmeku123.github.io/Test-Ton-Payment/callback",
   "tonDns": ""
 }
