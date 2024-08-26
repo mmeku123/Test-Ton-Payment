@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Telegram Mini App with TON Payment</title>
+    <!-- Include the Telegram Web App JavaScript API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Include TonWeb for TON blockchain interactions -->
+    <script src="https://cdn.jsdelivr.net/npm/tonweb@0.0.48/dist/tonweb.min.js"></script>
+    <!-- Include TON Connect UI Library for wallet connection -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+    <!-- Include TON Connect UI Library CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tonconnect/ui@latest/dist/tonconnect-ui.min.css"
+    />
+  </head>
+  <body>
+    <h1>Pay with TON in Telegram Mini App</h1>
+    <button id="connectWalletButton">Connect Wallet</button>
+    <!-- Container for TON Connect Button -->
+    <button id="payWithTonButton">Pay with TON</button>
+    <!-- Payment Button -->
+    <div id="paymentStatus"></div>
+    <!-- Status Display -->
+
+    <script>
+      const tg = window.Telegram.WebApp; // Initialize the Telegram Web App
+
+      // Initialize TON Connect UI
+      const tonConnect = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl:
+          "https://mmeku123.github.io/Test-Ton-Payment/tonconnect-manifest.json", // URL to your TON Connect manifest file
+      });
+
+      document
+        .getElementById("connectWalletButton")
+        .addEventListener("click", async () => {
+          const walletInfo = tonConnect.wallet; // Get connected wallet info
+
+          if (tonConnect.wallet) console.log(walletInfo);
+
+          try {
+            await tonConnect.openModal(); // Open the TON Connect modal to connect wallet
+          } catch (error) {
+            console.error("Error opening TON Connect modal:", error);
+          }
+        });
+
+      tonConnect.onStatusChange((wallet) => {
+        if (wallet.status === "connected") {
+          console.log(wallet);
+          // When the wallet is connected, show the payment button and hide the connect button
+          document.getElementById("payWithTonButton").style.display = "block";
+          document.getElementById("connectWalletButton").style.display = "none";
+        }
+      });
+
+      // Set up the "Pay with TON" button click event
+      document
+        .getElementById("payWithTonButton")
+        .addEventListener("click", () => {
+          tg.MainButton.text = "Processing TON Payment...";
+          tg.MainButton.show();
+          requestTonPayment();
+        });
+
+        async function sendTonTransaction() {
+            try {
+                // Retrieve the connected wallet from TON Connect UI
+                const provider = tonConnect.getProvider();
+                const walletInfo = provider.walletInfo; // Get connected wallet info
+
+                const destinationAddress = 'EQD3...'; // Replace with the destination address
+                const tonAmount = 0.1; // Example amount in TON
+
+                // Sending the transaction
+                await provider.sendTransaction({
+                    to: destinationAddress,
+                    value: tonAmount,
+                    stateInit: undefined, // No state initialization for a simple transfer
+                    data: undefined, // No additional data for a simple transfer
+                });
+
+                tg.MainButton.text = "Transaction Successful!";
+                tg.MainButton.show();
+            } catch (error) {
+                console.error('Error sending transaction:', error);
+                tg.MainButton.text = "Transaction Failed!";
+                tg.MainButton.show();
+            }
+        }
+      }
+    </script>
+  </body>
+</html>
