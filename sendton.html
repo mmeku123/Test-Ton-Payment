@@ -66,30 +66,29 @@
           requestTonPayment();
         });
 
-        async function sendTonTransaction() {
-            try {
-                // Retrieve the connected wallet from TON Connect UI
-                const provider = tonConnect.getProvider();
-                const walletInfo = provider.walletInfo; // Get connected wallet info
+      async function sendTonTransaction() {
+        try {
+          // Retrieve the connected wallet from TON Connect UI
+          const provider = tonConnect.getProvider();
+          const walletInfo = provider.walletInfo; // Get connected wallet info
 
-                const destinationAddress = 'EQD3...'; // Replace with the destination address
-                const tonAmount = 0.1; // Example amount in TON
+          const destinationAddress = "EQD3..."; // Replace with the destination address
+          const tonAmount = 0.1; // Example amount in TON
 
-                // Sending the transaction
-                await provider.sendTransaction({
-                    to: destinationAddress,
-                    value: tonAmount,
-                    stateInit: undefined, // No state initialization for a simple transfer
-                    data: undefined, // No additional data for a simple transfer
-                });
+          // Sending the transaction
+          await provider.sendTransaction({
+            to: destinationAddress,
+            value: tonAmount,
+            stateInit: undefined, // No state initialization for a simple transfer
+            data: undefined, // No additional data for a simple transfer
+          });
 
-                tg.MainButton.text = "Transaction Successful!";
-                tg.MainButton.show();
-            } catch (error) {
-                console.error('Error sending transaction:', error);
-                tg.MainButton.text = "Transaction Failed!";
-                tg.MainButton.show();
-            }
+          tg.MainButton.text = "Transaction Successful!";
+          tg.MainButton.show();
+        } catch (error) {
+          console.error("Error sending transaction:", error);
+          tg.MainButton.text = "Transaction Failed!";
+          tg.MainButton.show();
         }
       }
     </script>

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Telegram Mini App with Stars Payment</title>
+    <title>Telegram Mini App Game</title>
     <!-- Include the Telegram Web App JavaScript API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
@@ -15,54 +15,53 @@
     <!-- Status Display -->
 
     <script>
-      // Initialize the Telegram Web App
-      const tg = window.Telegram.WebApp;
+      const tg = window.Telegram.WebApp; // Initialize the Telegram Web App
 
       // Set up the "Buy Item" button click event
       document.getElementById("buyItemButton").addEventListener("click", () => {
+        console.log("click");
         tg.MainButton.text = "Processing Payment...";
         tg.MainButton.show();
-        openStarsPaymentPopup(); // Function to open the payment popup
+        requestStarsPayment();
       });
 
-      // Function to open the payment popup
-      function openStarsPaymentPopup() {
+      function requestStarsPayment() {
         // Example invoice data for Stars payment
-        const invoiceData = {
-          chat_id: tg.initDataUnsafe.user.id, // User ID from Telegram init data
-          title: "Game Item Purchase",
-          description: "Purchase a game item using Telegram Stars.",
-          payload: "game-item-purchase", // Unique identifier for the transaction
-          currency: "XTR", // Use 'XTR' for Telegram Stars currency
-          prices: [{ label: "Game Item", amount: 1000 }], // Example price in smallest currency unit (1 XTR = 100 units)
-          max_tip_amount: 10000, // Optional, maximum tip amount in the smallest units of the currency (1 XTR = 100 units)
-          suggested_tip_amounts: [500, 1000, 2000], // Optional, suggested tip amounts in the smallest units of the currency
-          provider_data: {}, // Additional provider-specific data (optional)
-        };
+        // const invoiceData = {
+        //   chat_id: tg.initDataUnsafe.user.id, // User ID from Telegram init data
+        //   title: "Game Item Purchase",
+        //   description: "Purchase a game item using Telegram Stars.",
+        //   payload: "game-item-purchase", // Unique identifier for the transaction
+        //   currency: "XTR", // Use 'XTR' for Telegram Stars currency
+        //   prices: [{ label: "Game Item", amount: 1000 }], // Example price in smallest currency unit (1 XTR = 100 units)
+        //   start_parameter: "buy_game_item",
+        // };
 
-        // Call the Telegram Web App API to open the payment popup
-        tg.showPopupInvoice({
-          title: invoiceData.title,
-          description: invoiceData.description,
-          currency: invoiceData.currency,
-          payload: invoiceData.payload,
-          prices: invoiceData.prices,
-          max_tip_amount: invoiceData.max_tip_amount,
-          suggested_tip_amounts: invoiceData.suggested_tip_amounts,
-          provider_data: JSON.stringify(invoiceData.provider_data),
+        // Send a request to your server to initiate the payment process
+        fetch("localhost:3000/pay", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
         })
-          .then(() => {
-            tg.MainButton.text = "Payment Successful!";
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.ok) {
+              tg.MainButton.text = "Payment Successful!";
+              document.getElementById("paymentStatus").innerText =
+                "Item purchased successfully!";
+            } else {
+              tg.MainButton.text = "Payment Failed!";
+              document.getElementById("paymentStatus").innerText =
+                "Payment failed. Please try again.";
+            }
             tg.MainButton.show();
-            document.getElementById("paymentStatus").innerText =
-              "Item purchased successfully!";
           })
           .catch((error) => {
-            console.error("Error opening payment popup:", error);
-            tg.MainButton.text = "Payment Failed!";
+            tg.MainButton.text = "Payment Error!";
             tg.MainButton.show();
-            document.getElementById("paymentStatus").innerText =
-              "Payment failed. Please try again.";
+            console.error("Error processing payment:", error);
           });
       }
     </script>
