@@ -20,7 +20,7 @@ bot.command("buy", async (ctx) => {
     title: "Game Item Purchase",
     description: `Purchase ${itemDescription} using Telegram Stars.`,
     payload: payload, // Serialized JSON payload with additional data
-    provider_token: "YOUR_PROVIDER_TOKEN", // Replace with your payment provider token from BotFather
+    provider_token: "284685063:TEST:ZjMxOTQyOWZiNWYx", // Replace with your payment provider token from BotFather
     currency: "XTR", // Use 'XTR' for Telegram Stars currency
     prices: [{ label: "Game Item", amount: 1 }], // Example price in smallest currency unit (1 XTR = 100 units)
   };
