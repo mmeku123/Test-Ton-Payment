@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Telegram Mini App Game</title>
+    <title>Telegram Mini App with Stars Payment</title>
     <!-- Include the Telegram Web App JavaScript API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
@@ -15,17 +15,18 @@
     <!-- Status Display -->
 
     <script>
-      const tg = window.Telegram.WebApp; // Initialize the Telegram Web App
+      // Initialize the Telegram Web App
+      const tg = window.Telegram.WebApp;
 
       // Set up the "Buy Item" button click event
       document.getElementById("buyItemButton").addEventListener("click", () => {
-        console.log("click");
         tg.MainButton.text = "Processing Payment...";
         tg.MainButton.show();
-        requestStarsPayment();
+        openStarsPaymentPopup(); // Function to open the payment popup
       });
 
-      function requestStarsPayment() {
+      // Function to open the payment popup
+      function openStarsPaymentPopup() {
         // Example invoice data for Stars payment
         const invoiceData = {
           chat_id: tg.initDataUnsafe.user.id, // User ID from Telegram init data
@@ -34,37 +35,34 @@
           payload: "game-item-purchase", // Unique identifier for the transaction
           currency: "XTR", // Use 'XTR' for Telegram Stars currency
           prices: [{ label: "Game Item", amount: 1000 }], // Example price in smallest currency unit (1 XTR = 100 units)
-          start_parameter: "buy_game_item",
+          max_tip_amount: 10000, // Optional, maximum tip amount in the smallest units of the currency (1 XTR = 100 units)
+          suggested_tip_amounts: [500, 1000, 2000], // Optional, suggested tip amounts in the smallest units of the currency
+          provider_data: {}, // Additional provider-specific data (optional)
         };
 
-        // Send a request to your server to initiate the payment process
-        fetch(
-          "https://e2f4-2001-fb1-db-5759-3c54-3158-75fa-1875.ngrok-free.app/pay",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(invoiceData),
-          }
-        )
-          .then((response) => response.json())
-          .then((result) => {
-            if (result.ok) {
-              tg.MainButton.text = "Payment Successful!";
-              document.getElementById("paymentStatus").innerText =
-                "Item purchased successfully!";
-            } else {
-              tg.MainButton.text = "Payment Failed!";
-              document.getElementById("paymentStatus").innerText =
-                "Payment failed. Please try again.";
-            }
+        // Call the Telegram Web App API to open the payment popup
+        tg.showPopupInvoice({
+          title: invoiceData.title,
+          description: invoiceData.description,
+          currency: invoiceData.currency,
+          payload: invoiceData.payload,
+          prices: invoiceData.prices,
+          max_tip_amount: invoiceData.max_tip_amount,
+          suggested_tip_amounts: invoiceData.suggested_tip_amounts,
+          provider_data: JSON.stringify(invoiceData.provider_data),
+        })
+          .then(() => {
+            tg.MainButton.text = "Payment Successful!";
             tg.MainButton.show();
+            document.getElementById("paymentStatus").innerText =
+              "Item purchased successfully!";
           })
           .catch((error) => {
-            tg.MainButton.text = "Payment Error!";
+            console.error("Error opening payment popup:", error);
+            tg.MainButton.text = "Payment Failed!";
             tg.MainButton.show();
-            console.error("Error processing payment:", error);
+            document.getElementById("paymentStatus").innerText =
+              "Payment failed. Please try again.";
           });
       }
     </script>
