@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TON Connect - Send USDT Jetton</title>
+    <!-- Include TonWeb library via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tonweb@latest/dist/tonweb.min.js"></script>
+    <!-- Include TON Connect UI library via CDN -->
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  </head>
+  <body>
+    <h1>TON Wallet Connect</h1>
+    <button id="connectWallet">Connect TON Wallet</button>
+    <div id="walletInfo"></div>
+    <button id="sendUsdt" style="display: none">Send USDT</button>
+    <div id="transactionStatus"></div>
+
+    <script>
+      // Initialize TonConnect UI
+      const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl:
+          "https://mmeku123.github.io/Test-Ton-Payment/tonconnect-manifest.json",
+        network: "testnet",
+      });
+
+      const tonweb = new TonWeb(
+        new TonWeb.HttpProvider("https://testnet.toncenter.com/api/v2/jsonRPC")
+      );
+
+      // Handle wallet connection
+      document
+        .getElementById("connectWallet")
+        .addEventListener("click", async () => {
+          try {
+            if (tonConnectUI.wallet) await tonConnectUI.disconnect();
+            await tonConnectUI.connectWallet();
+            wallet = tonConnectUI.wallet;
+            document.getElementById(
+              "walletInfo"
+            ).innerText = `Connected Wallet: ${wallet.account.address}`;
+            document.getElementById("sendUsdt").style.display = "block";
+          } catch (error) {
+            alert("Failed to connect wallet: " + error.message);
+          }
+        });
+
+      // Send USDT (Jetton) transaction
+      document
+        .getElementById("sendUsdt")
+        .addEventListener("click", async () => {
+          const toAddress = "EQBBJBB3HagsujBqVfqeDUPJ0kXjgTPLWPFFffuNXNiJL0aA"; // Replace with actual recipient address
+          const amount = 10; // Amount in USDT
+
+          try {
+            const txHash = await sendJetton(toAddress, amount);
+            document.getElementById(
+              "transactionStatus"
+            ).innerText = `Transaction sent! Hash: ${txHash}`;
+          } catch (error) {
+            alert("Failed to send USDT: " + error.message);
+          }
+        });
+
+      async function sendJetton(toAddress, amount) {
+        const jettonWalletAddress =
+          "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"; // Replace with the USDT Jetton contract address
+
+        // Create the transaction parameters
+        const transactionParams = {
+          validUntil: Math.floor(Date.now() / 1000) + 300, // Transaction valid for 5 minutes
+          messages: [
+            {
+              address: jettonWalletAddress,
+              amount: tonweb.utils.toNano("0.1"), // Minimal amount of TON to cover fees
+              payload: createJettonTransferPayload(toAddress, amount), // Payload for Jetton transfer
+              stateInit: null, // Usually null unless creating a new contract
+            },
+          ],
+          network: "testnet", // or 'testnet' depending on your environment
+        };
+
+        // Send the transaction using tonConnectUI.sendTransaction
+        const result = await tonConnectUI.sendTransaction(transactionParams);
+        return result.transactionHash; // Return the transaction hash
+      }
+
+      function createJettonTransferPayload(toAddress, amount) {
+        // Create the payload for transferring Jetton (USDT)
+        // Construct the Jetton transfer payload using TonWeb
+        const payloadCell = new tonweb.boc.Cell();
+        payloadCell.bits.writeUint(0, 32); // Write query_id
+        payloadCell.bits.writeCoins(tonweb.utils.toNano(amount.toString())); // Convert USDT amount to Nano and write it
+        payloadCell.bits.writeAddress(new tonweb.Address(toAddress)); // Write recipient address
+        payloadCell.bits.writeAddress(
+          new tonweb.Address(tonConnectUI.wallet.account.address)
+        ); // Write sender address (for response)
+        payloadCell.bits.writeBit(0); // custom_payload, absent
+        payloadCell.bits.writeCoins(new tonweb.utils.BN(0)); // forward_ton_amount
+        payloadCell.bits.writeBit(0); // forward_payload, absent
+
+        return payloadCell;
+      }
+    </script>
+  </body>
+</html>

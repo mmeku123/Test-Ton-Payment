@@ -2,67 +2,79 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Telegram Mini App Game</title>
-    <!-- Include the Telegram Web App JavaScript API -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TON Wallet Connect</title>
+    <script src="https://cdn.jsdelivr.net/npm/tonweb@0.0.45/dist/tonweb.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
   </head>
   <body>
-    <h1>My Game</h1>
-    <p>Play the game and buy items using Telegram Stars!</p>
-    <button id="buyItemButton">Buy Item with Stars</button>
-    <!-- Button to buy an in-game item -->
-    <div id="paymentStatus"></div>
-    <!-- Status Display -->
+    <h1>TON Wallet Connect</h1>
+    <button id="connectWallet">Connect TON Wallet</button>
+    <div id="walletInfo"></div>
+    <button id="sendTon" style="display: none">Send TON</button>
+    <button id="sendUsdt" style="display: none">Send USDT</button>
+    <div id="transactionStatus"></div>
 
     <script>
-      const tg = window.Telegram.WebApp; // Initialize the Telegram Web App
+      // Initialize TonConnect SDK
+      const USDT_CONTRACT = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs";
 
-      // Set up the "Buy Item" button click event
-      document.getElementById("buyItemButton").addEventListener("click", () => {
-        console.log("click");
-        tg.MainButton.text = "Processing Payment...";
-        tg.MainButton.show();
-        requestStarsPayment();
+      const tonConnect = new TON_CONNECT_UI.TonConnectUI({
+        manifestUrl:
+          "https://mmeku123.github.io/Test-Ton-Payment/tonconnect-manifest.json",
       });
 
-      function requestStarsPayment() {
-        // Example invoice data for Stars payment
-        // const invoiceData = {
-        //   chat_id: tg.initDataUnsafe.user.id, // User ID from Telegram init data
-        //   title: "Game Item Purchase",
-        //   description: "Purchase a game item using Telegram Stars.",
-        //   payload: "game-item-purchase", // Unique identifier for the transaction
-        //   currency: "XTR", // Use 'XTR' for Telegram Stars currency
-        //   prices: [{ label: "Game Item", amount: 1000 }], // Example price in smallest currency unit (1 XTR = 100 units)
-        //   start_parameter: "buy_game_item",
-        // };
+      document
+        .getElementById("connectWallet")
+        .addEventListener("click", async () => {
+          try {
+            if (tonConnect.wallet) await tonConnect.disconnect();
+            await tonConnect.connectWallet();
+            const wallet = tonConnect.wallet;
+            document.getElementById(
+              "walletInfo"
+            ).innerText = `Connected Wallet: ${wallet.account.address}`;
+            document.getElementById("sendTon").style.display = "block";
+            document.getElementById("sendUsdt").style.display = "block";
+          } catch (error) {
+            alert("Failed to connect wallet: " + error.message);
+          }
+        });
 
-        // Send a request to your server to initiate the payment process
-        fetch("localhost:3000/pay", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({}),
-        })
-          .then((response) => response.json())
-          .then((result) => {
-            if (result.ok) {
-              tg.MainButton.text = "Payment Successful!";
-              document.getElementById("paymentStatus").innerText =
-                "Item purchased successfully!";
-            } else {
-              tg.MainButton.text = "Payment Failed!";
-              document.getElementById("paymentStatus").innerText =
-                "Payment failed. Please try again.";
-            }
-            tg.MainButton.show();
-          })
-          .catch((error) => {
-            tg.MainButton.text = "Payment Error!";
-            tg.MainButton.show();
-            console.error("Error processing payment:", error);
-          });
+      // Send TON transaction
+      document.getElementById("sendTon").addEventListener("click", async () => {
+        const toAddress = "EQBBJBB3HagsujBqVfqeDUPJ0kXjgTPLWPFFffuNXNiJL0aA"; // Replace with actual recipient address
+        const amount = "1000"; // Amount in TON
+
+        try {
+          const txHash = await sendTon(toAddress, amount);
+          document.getElementById(
+            "transactionStatus"
+          ).innerText = `Transaction sent! Hash: ${txHash}`;
+        } catch (error) {
+          alert("Failed to send TON: " + error.message);
+        }
+      });
+
+      async function sendTon(toAddress, amount) {
+        const txParams = {
+          to: toAddress,
+          amount: amount, // Convert amount to Nano TON
+        };
+
+        const transaction = {
+          validUntil: Math.floor(Date.now() / 1000) + 60, // 60 sec
+          messages: [
+            {
+              address: "EQBBJBB3HagsujBqVfqeDUPJ0kXjgTPLWPFFffuNXNiJL0aA",
+              amount: "20000000",
+              // stateInit: "base64bocblahblahblah==" // just for instance. Replace with your transaction initState or remove
+            },
+          ],
+        };
+
+        const result = await tonConnect.sendTransaction(transaction);
+        return result.transactionId;
       }
     </script>
   </body>
